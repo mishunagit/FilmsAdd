@@ -1,7 +1,7 @@
 **How ​​to use?**
 1. Place the poster and the video player from your gallery
 2. Write a title and description
-3. Specify the player (ANO or ANO+)
+3. Specify the player (AHO or AHO+)
 4. Publish your movie and watch your movie
 
 **What are the problems in the code?**
