@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FilmsAdd — Serious Project</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0b0b; --card: #161618; --accent: #007AFF;
+            --text: #ffffff; --text-secondary: #8e8e93; --border: #2c2c2e;
+        }
+
+        body {
+            background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif;
+            margin: 0; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; flex-direction: column; padding: 20px;
+        }
+
+        .lang-switcher { margin-bottom: 20px; background: var(--card); padding: 5px; border-radius: 10px; border: 1px solid var(--border); }
+        .lang-btn { background: transparent; border: none; color: var(--text-secondary); padding: 5px 15px; cursor: pointer; font-weight: 600; border-radius: 7px; }
+        .lang-btn.active { background: var(--accent); color: white; }
+
+        .container { width: 100%; max-width: 500px; background: var(--card); padding: 40px; border-radius: 24px; border: 1px solid var(--border); box-sizing: border-box; }
+        
+        h1 { font-weight: 800; font-size: 28px; margin-bottom: 8px; text-align: center; }
+        p.subtitle { color: var(--text-secondary); text-align: center; margin-bottom: 32px; font-size: 14px; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
+
+        input, textarea, select { width: 100%; padding: 14px; background: #1c1c1e; border: 1px solid var(--border); border-radius: 12px; color: white; font-size: 16px; box-sizing: border-box; }
+        
+        .media-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .upload-box { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .upload-box:hover { border-color: var(--accent); background: rgba(0, 122, 255, 0.05); }
+        .upload-box.done { border-color: #34c759; color: #34c759; border-style: solid; }
+
+        .submit-btn { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 14px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+
+        /* Экран просмотра */
+        #resultView { display: none; width: 100%; max-width: 850px; }
+        video { width: 100%; border-radius: 20px; border: 1px solid var(--border); background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .tag-aho { background: #333; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 900; }
+        .tag-aho.plus { background: #FFD700; color: #000; }
+
+        .movie-content { display: grid; grid-template-columns: 220px 1fr; gap: 30px; margin-top: 25px; }
+        .res-poster { width: 100%; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        h2 { font-size: 36px; margin: 0 0 10px 0; }
+        .res-desc { color: var(--text-secondary); line-height: 1.6; font-size: 16px; }
+
+        #priceInput { margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('ru', this)">RU</button>
+    <button class="lang-btn" onclick="setLang('en', this)">EN</button>
+</div>
+
+<div class="container" id="uploadView">
+    <h1>FilmsAdd</h1>
+    <p class="subtitle" id="t-sub">Серьезная платформа для ваших фильмов</p>
+
+    <form id="mainForm">
+        <div class="media-grid">
+            <div class="upload-box" id="box-poster" onclick="document.getElementById('f-poster').click()">
+                <b id="t-p">🖼 Постер</b>
+                <input type="file" id="f-poster" hidden accept="image/*" required onchange="handleFile(this, 'box-poster')">
+            </div>
+            <div class="upload-box" id="box-video" onclick="document.getElementById('f-video').click()">
+                <b id="t-v">🎬 Видео</b>
+                <input type="file" id="f-video" hidden accept="video/*" required onchange="handleFile(this, 'box-video')">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label id="t-l1">Название</label>
+            <input type="text" id="i-title" required>
+        </div>
+
+        <div class="form-group">
+            <label id="t-l2">Версия плеера</label>
+            <select id="i-player" onchange="checkPlayer()">
+                <option value="AHO">AHO (С рекламой)</option>
+                <option value="AHO+">AHO+ (Без рекламы — 200₽)</option>
+            </select>
+            <input type="text" id="priceInput" placeholder="Цена за просмотр (необязательно)">
+        </div>
+
+        <div class="form-group">
+            <label id="t-l3">Описание</label>
+            <textarea id="i-desc" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="t-btn">Опубликовать</button>
+    </form>
+</div>
+
+<div id="resultView">
+    <div class="player-header">
+        <div id="resTag" class="tag-aho">AHO</div>
+        <button onclick="location.reload()" style="background:none; border:1px solid var(--border); color:#888; border-radius:8px; cursor:pointer; padding:5px 10px;">← Назад</button>
+    </div>
+    
+    <video id="mainPlayer" controls poster=""></video>
+
+    <div class="movie-content">
+        <img src="" id="resPoster" class="res-poster">
+        <div>
+            <h2 id="resTitle">Title</h2>
+            <p class="res-desc" id="resDesc"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const trans = {
+        ru: { sub: "Серьезная платформа для фильмов", p: "🖼 Постер", v: "🎬 Видео", l1: "Название", l2: "Версия плеера", l3: "Описание", btn: "Опубликовать", ahoP: "AHO+ (Без рекламы — 200₽)" },
+        en: { sub: "Serious platform for your movies", p: "🖼 Poster", v: "🎬 Video", l1: "Title", l2: "Player Version", l3: "Description", btn: "Publish", ahoP: "AHO+ (No Ads — $200)" }
+    };
+
+    function setLang(l, b) {
+        document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+        b.classList.add('active');
+        document.getElementById('t-sub').innerText = trans[l].sub;
+        document.getElementById('t-p').innerText = trans[l].p;
+        document.getElementById('t-v').innerText = trans[l].v;
+        document.getElementById('t-l1').innerText = trans[l].l1;
+        document.getElementById('t-l2').innerText = trans[l].l2;
+        document.getElementById('t-l3').innerText = trans[l].l3;
+        document.getElementById('t-btn').innerText = trans[l].btn;
+        document.getElementById('i-player').options[1].text = trans[l].ahoP;
+    }
+
+    function checkPlayer() {
+        const val = document.getElementById('i-player').value;
+        document.getElementById('priceInput').style.display = (val === 'AHO+') ? 'block' : 'none';
+    }
+
+    function handleFile(input, boxId) {
+        if(input.files[0]) document.getElementById(boxId).classList.add('done');
+    }
+
+    document.getElementById('mainForm').onsubmit = function(e) {
+        e.preventDefault();
+        
+        const videoFile = document.getElementById('f-video').files[0];
+        const posterFile = document.getElementById('f-poster').files[0];
+        const playerType = document.getElementById('i-player').value;
+
+        // Создаем ссылки на файлы из памяти устройства
+        const videoURL = URL.createObjectURL(videoFile);
+        const posterURL = URL.createObjectURL(posterFile);
+
+        // Наполняем плеер
+        const player = document.getElementById('mainPlayer');
+        player.src = videoURL;
+        document.getElementById('resPoster').src = posterURL;
+        document.getElementById('resTitle').innerText = document.getElementById('i-title').value;
+        document.getElementById('resDesc').innerText = document.getElementById('i-desc').value;
+        
+        const tag = document.getElementById('resTag');
+        tag.innerText = playerType;
+        playerType === 'AHO+' ? tag.classList.add('plus') : tag.classList.remove('plus');
+
+        // Показываем
+        document.getElementById('uploadView').style.display = 'none';
+        document.getElementById('resultView').style.display = 'block';
+    };
+</script>
+
+</body>
+</html>
